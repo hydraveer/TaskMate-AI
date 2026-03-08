@@ -5,13 +5,12 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
-SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
+SECRET_KEY = "515327a63c4e8c022cb3d4032c41357a5c1bd754bf94a27976b99bbe19eaa20e"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60*24*7
 
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 def hash_password(password: str):
     """Hash a plain text password"""
@@ -48,7 +47,7 @@ def decode_access_token(token: str):
     except JWTError:
         return None
     
-def get_current_user(token: str = Depends(oauth2_scheme)) -> int:
+def get_current_user_id(token: str = Depends(oauth2_scheme)) -> int:
     """Get current user ID from token (used in protected routes)"""
     user_id = decode_access_token(token)
     if user_id is None:

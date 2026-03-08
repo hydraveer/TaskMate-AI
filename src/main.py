@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
+from fastapi.security import OAuth2PasswordRequestForm
+from typing import Optional, List
 
-# Import our modules
 from src.database import init_db, get_db, DbSession
 from src.schemas import (
     UserCreate, UserResponse, UserLogin,
@@ -11,7 +11,7 @@ from src.schemas import (
 )
 from src import user_crud, crud
 from src.auth import (
-    create_access_token, 
+    create_access_token,
     get_current_user_id,
     verify_password
 )
@@ -92,3 +92,123 @@ def login(login_data: UserLogin, db: DbSession):
         "access_token": access_token,
         "token_type":"bearer"
     }
+
+@app.get("/user", response_model = UserResponse)
+def get_current_user(
+    db: DbSession,
+    user_id: int = Depends(get_current_user_id)
+):
+    user = user_crud.get_user_by_id(db, user_id)
+    if not user:
+        raise HTTPException(
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "User not found"
+        )
+    return user
+
+@app.post("/task", response_model = TaskResponse, status_code = status.HTTP_201_CREATED)
+def create_task(
+    task_data: TaskCreate,
+    db: DbSession,
+    user_id: int = Depends(get_current_user_id)
+):
+    task = crud.create_task(
+        db = db,
+        user_id = user_id,
+        title = task_data.title,
+        description = task_data.description,
+        due_date = task_data.due_date,
+        priority = task_data.priority
+    )
+
+    return task
+
+@app.get("/tasks", response_model = List[TaskResponse])
+def get_all_tasks(
+    db: DbSession,
+    completed: Optional[bool] = None,
+    user_id: int = Depends(get_current_user_id)
+):
+    tasks = crud.get_all_tasks(
+        db,
+        user_id = user_id,
+        completed = completed
+    )
+    return tasks
+
+@app.get("/task/{task_id}", response_model = TaskResponse)
+def get_task_by_id(
+    db: DbSession,
+    task_id: int,
+    user_id:int = Depends(get_current_user_id)
+):
+    task = crud.get_task_by_id(
+        db, task_id, user_id
+    )
+    if not task:
+        raise HTTPException(
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail = "Task not found"
+        )
+    return task
+
+@app.put("/tasks/{task_id}", response_model=TaskResponse)
+def update_task_endpoint(
+    db: DbSession,
+    task_id: int,
+    task_data: TaskUpdate,
+    user_id: int = Depends(get_current_user_id)
+):
+    """
+    Update task (only if it belongs to current user)
+    
+    What it does:
+    1. Get user_id from token
+    2. Update task (checks ownership!)
+    3. Return updated task or 404
+    """
+    task = crud.update_task(
+        db=db,
+        task_id=task_id,
+        user_id=user_id,
+        title=task_data.title,
+        description=task_data.description,
+        due_date=task_data.due_date,
+        completed=task_data.completed,
+        priority=task_data.priority
+    )
+    
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+    
+    return task
+
+@app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_task_endpoint(
+    db: DbSession,
+    task_id: int,
+    user_id:int = Depends(get_current_user_id)
+):
+    """
+    Delete task (only if it belongs to current user)
+    
+    What it does:
+    1. Get user_id from token
+    2. Delete task (checks ownership!)
+    3. Return 204 No Content or 404
+    """
+    success = crud.delete_task(db, task_id, user_id)
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+    return None 
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

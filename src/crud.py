@@ -1,5 +1,5 @@
-from sqlalchemy.ord import Session
-from src.model import Task
+from sqlalchemy.orm import Session
+from src.models import Task
 from datetime import datetime
 from typing import List, Optional
 
