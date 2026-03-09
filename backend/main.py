@@ -7,7 +7,7 @@ from src.database import init_db, get_db, DbSession
 from src.schemas import (
     UserCreate, UserResponse, UserLogin,
     TaskCreate, TaskResponse, TaskUpdate,
-    Token
+    Token, ChatRequest, ChatResponse
 )
 from src import user_crud, crud
 from src.auth import (
@@ -15,6 +15,7 @@ from src.auth import (
     get_current_user_id,
     verify_password
 )
+from src.ai_agent import chat_with_ai
 
 # Create FastAPI app
 app = FastAPI(
@@ -90,10 +91,31 @@ def login(login_data: UserLogin, db: DbSession):
     access_token = create_access_token(data={"user_id": user.id})
     return {
         "access_token": access_token,
-        "token_type":"bearer"
+        "token_type": "bearer"
     }
 
-@app.get("/user", response_model = UserResponse)
+# ⚠️ DO NOT DELETE — Required for Swagger UI 🔒 Authorize button
+# "username" field in Swagger = your email address
+@app.post("/token", response_model=Token, include_in_schema=False)
+def swagger_token(
+    db: DbSession,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+):
+    user = user_crud.authenticate_user(
+        db=db,
+        email=form_data.username,
+        password=form_data.password
+    )
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(data={"user_id": user.id})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.get("/user", response_model=UserResponse)
 def get_current_user(
     db: DbSession,
     user_id: int = Depends(get_current_user_id)
@@ -207,7 +229,22 @@ def delete_task_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found"
         )
-    return None 
+    return None
+
+@app.post("/ai/chat", response_model=ChatResponse)
+def ai_chat(
+    chat_request: ChatRequest,
+    db: DbSession,
+    user_id: int = Depends(get_current_user_id)
+):
+    response = chat_with_ai(
+        message = chat_request.message,
+        db=db,
+        user_id=user_id
+    )
+    return {
+        "response": response
+    }
 
 if __name__ == "__main__":
     import uvicorn

@@ -53,43 +53,40 @@ def get_task_by_id(
 
 def update_task(
     db: Session,
-    task_id : int,
+    task_id: int,
     user_id: int,
-    title: str,
+    title: Optional[str] = None,          # bug fix: must be Optional (TaskUpdate has it Optional)
     description: Optional[str] = None,
-    due_completed: Optional[str] = None,
+    due_date: Optional[datetime] = None,  # bug fix: was named `due_completed` (typo)
     completed: Optional[bool] = None,
     priority: Optional[str] = None
-) ->Optional[Task]:
+) -> Optional[Task]:
     """Update task only if it belongs to user"""
     task = get_task_by_id(db, task_id, user_id)
     if not task:
-        None
-    
+        return None                        # bug fix: was `None` with no `return` — did nothing
+
     if title is not None:
         task.title = title
-    
+
     if description is not None:
         task.description = description
-    
-    if due_completed is not None:
-        task.due_completed = due_completed
-    
+
+    if due_date is not None:
+        task.due_date = due_date           # bug fix: was `task.due_completed` (wrong field name)
+
     if completed is not None:
         task.completed = completed
-
         if completed:
             task.completed_at = datetime.utcnow()
 
     if priority is not None:
         task.priority = priority
-    
+
     db.commit()
     db.refresh(task)
-
     return task
-    
-    
+
 def delete_task(
     db: Session,
     task_id: int,
