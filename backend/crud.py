@@ -44,7 +44,7 @@ def get_task_by_id(
     db: Session, 
     task_id: int,
     user_id: int
-) -> Optional[task]:
+) -> Optional[Task]:
     """Get task only if it belongs to user"""
     return db.query(Task).filter(
         Task.id == task_id,
