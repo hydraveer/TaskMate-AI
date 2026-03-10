@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from src.models import User
-from src.auth import hash_password, verify_password
+from models import User
+from auth import hash_password, verify_password
 from typing import Optional
 
 

@@ -3,19 +3,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Optional, List
 
-from src.database import init_db, get_db, DbSession
-from src.schemas import (
+from database import init_db, get_db, DbSession
+from schemas import (
     UserCreate, UserResponse, UserLogin,
     TaskCreate, TaskResponse, TaskUpdate,
     Token, ChatRequest, ChatResponse
 )
-from src import user_crud, crud
-from src.auth import (
+import user_crud, crud
+from auth import (
     create_access_token,
     get_current_user_id,
     verify_password
 )
-from src.ai_agent import chat_with_ai
+from ai_agent import chat_with_ai
 
 # Create FastAPI app
 app = FastAPI(
@@ -65,29 +65,19 @@ def signup(user_data: UserCreate, db: DbSession):
     return user
 
 @app.post("/login", response_model = Token)
-def login(login_data: UserLogin, db: DbSession):
+def login(db: DbSession, login_data: OAuth2PasswordRequestForm = Depends()):
     
-    existing_user = user_crud.get_user_by_email(db, login_data.email)
-
-    if not existing_user:
+    user = user_crud.authenticate_user(
+        db=db,
+        email=login_data.username,
+        password=login_data.password
+    )
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    user = user_crud.authenticate_user(
-        db = db,
-        email = login_data.email,
-        password = login_data.password
-    )
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
     access_token = create_access_token(data={"user_id": user.id})
     return {
         "access_token": access_token,

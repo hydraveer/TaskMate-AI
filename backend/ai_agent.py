@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()  # load .env before OpenAI client reads OPENAI_API_KEY
 
-from src.ai_tools import get_tools
-from src import crud
+from ai_tools import get_tools
+import crud
 from sqlalchemy.orm import Session
 
 

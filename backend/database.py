@@ -2,7 +2,7 @@ from typing import Annotated
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from fastapi import Depends
-from .models import Base          # when used as package (src.database)
+from models import Base          # absolute import (backend/ is the root)
 
 DATABASE_URL = "sqlite:///./taskmate.db"
 
@@ -25,7 +25,6 @@ def get_db():
         db.close()
 
 # ── Reusable dependency annotation ──────────────────────────────────────────
-# Use this instead of `db: Session = Depends(get_db)` in every route.
 # Example:
 #   def my_route(db: DbSession): ...
 DbSession = Annotated[Session, Depends(get_db)]
