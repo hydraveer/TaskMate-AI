@@ -89,7 +89,6 @@ def login(db: DbSession, login_data: OAuth2PasswordRequestForm = Depends()):
         "token_type": "bearer"
     }
 
-# ⚠️ DO NOT DELETE — Required for Swagger UI 🔒 Authorize button
 # "username" field in Swagger = your email address
 @app.post("/token", response_model=Token, include_in_schema=False)
 def swagger_token(
