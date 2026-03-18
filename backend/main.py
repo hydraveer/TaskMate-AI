@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
@@ -17,11 +18,21 @@ from auth import (
 )
 from ai_agent import chat_with_ai
 
+# Lifespan: runs on startup and shutdown
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    init_db()
+    print("✓ Database initialized")
+    yield
+    # Shutdown (cleanup if needed)
+
 # Create FastAPI app
 app = FastAPI(
     title = "TaskMate AI",
     description = "AI-powered task management assistant",
-    version = "1.0.0"
+    version = "1.0.0",
+    lifespan = lifespan
 )
 
 # Add CORS middleware (for frontend)
@@ -32,12 +43,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Initialize database on startup
-@app.on_event("startup")
-def startup_event():
-    init_db()
-    print("✓ Database initialized")
 
 @app.get("/")
 def root():
@@ -84,7 +89,6 @@ def login(db: DbSession, login_data: OAuth2PasswordRequestForm = Depends()):
         "token_type": "bearer"
     }
 
-# ⚠️ DO NOT DELETE — Required for Swagger UI 🔒 Authorize button
 # "username" field in Swagger = your email address
 @app.post("/token", response_model=Token, include_in_schema=False)
 def swagger_token(
@@ -238,4 +242,4 @@ def ai_chat(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

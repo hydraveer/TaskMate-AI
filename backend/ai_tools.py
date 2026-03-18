@@ -9,7 +9,7 @@ def get_tools():
             "function": {
                 "name": "create_task",
                 "description": "Create a new task for the user. Use this when user wants to add a task, create a reminder, or add something to their todo list.",
-                "parameters":{                  # bug fix: was `parameter` (singular) — OpenAI needs `parameters`
+                "parameters":{
                     "type": "object",
                     "properties": {
                         "title":{
@@ -40,7 +40,7 @@ def get_tools():
             "function": {
                 "name" : "list_tasks",
                 "description": "Get all tasks for the user. Use this when user asks to see their tasks, view their todo list, or check what they need to do.",
-                "parameters": {               # bug fix: was `parameter` (singular) — OpenAI needs `parameters`
+                "parameters": {
                     "type": "object",
                     "properties": {
                         "completed": {

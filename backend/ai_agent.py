@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any
 import dateparser
 from dotenv import load_dotenv
 
-load_dotenv()  # load .env before OpenAI client reads OPENAI_API_KEY
+load_dotenv()  
 
 from ai_tools import get_tools
 import crud
@@ -21,11 +21,11 @@ def parse_due_date(date_string: Optional[str]) -> Optional[datetime]:
         return None
 
     try:
-        parsed_date = dateparser.parse(          # bug fix: was `dateparse` (wrong name)
+        parsed_date = dateparser.parse(          
             date_string,
             settings={'PREFER_DATES_FROM': 'future'}
         )
-        return parsed_date                        # bug fix: was missing — function returned None always
+        return parsed_date                        
     except (ValueError, Exception):
         return None
 
